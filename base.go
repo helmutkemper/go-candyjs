@@ -6,6 +6,8 @@ import (
 	"unsafe"
 
 	"github.com/helmutkemper/go-duktape"
+  "io/ioutil"
+  "regexp"
 )
 
 const goProxyPtrProp = "\xff" + "goProxyPtrProp"
@@ -296,6 +298,27 @@ func (ctx *Context) pushGlobalValues(name string, vs []reflect.Value) error {
 	ctx.Pop()
 
 	return nil
+}
+
+func (ctx *Context) MyRequire(pathOfFile string) {
+  var file []byte
+  re, err := regexp.Compile(`^[a-zA-Z][a-zA-Z0-9_]+$`)
+  if err != nil {
+    file = []byte(`{ 'error': '` + err.Error() + `' };`)
+    ctx.PevalString(string(file))
+    return
+  }
+
+  if re.MatchString(pathOfFile) {
+    file, err = ioutil.ReadFile("./" + pathOfFile + ".js")
+    if err != nil {
+      file = []byte(`{ 'error': 'file not found' };`)
+    }
+  } else {
+    file = []byte(`{ 'error': 'file not found.' };`)
+  }
+
+  ctx.PevalString(string(file))
 }
 
 func (ctx *Context) pushValues(vs []reflect.Value) error {
